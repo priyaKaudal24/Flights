@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import Modal from "react-bootstrap/Modal";
 import { Link } from 'react-router-dom'
+import { getFlights, postFlights } from './api';
+
 function Flights() {
 
     const [data, setData] = useState([]);
@@ -18,16 +20,15 @@ function Flights() {
     })
 
     useEffect(() => {
-        getFlights()
+        getFlightsData()
         return () => {
             setData([])
         }
     }, []);
 
-    function getFlights() {
-        let flights = localStorage.getItem("flights");
-        let flightsData = JSON.parse(flights)
-        setData(flightsData ? flightsData : [])
+    async function getFlightsData() {
+        let results = await getFlights();
+        setData(results ? results.data : [])
     }
     const columns = [
 
@@ -90,7 +91,7 @@ function Flights() {
         setShowPop(!showPop)
     }
 
-    const handleSubmitClick = (e) => {
+    const handleSubmitClick = async (e) => {
         if (handleValidation()) {
             let obj = {
                 from: state.from,
@@ -99,9 +100,11 @@ function Flights() {
                 landingtime: state.landingtime,
                 price: state.price
             }
-            data.push(obj);
-            localStorage.setItem("flights", JSON.stringify(data));
-            getFlights()
+            let result = await postFlights(obj);
+            if(result?.data?.success === true){
+                alert(result?.data?.message)
+            }
+            getFlightsData()
             setShowPop(!showPop)
         }
     }
@@ -116,7 +119,7 @@ function Flights() {
     return (
         <div className="appdata container">
             <button className="btn btn-primary btn-xs pull-right" onClick={show}>Add Flight</button>
-            <div className="row col-md-12 col-md-offset-2 custyle">                
+            <div className="row col-md-12 col-md-offset-2 custyle">
                 <div className='text-center mb-5'><h3>Flights</h3></div>
                 <DataTable
                     columns={columns}
